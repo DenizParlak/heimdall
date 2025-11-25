@@ -1,0 +1,135 @@
+{
+  "schema_version": "0.1.0",
+  "metadata": {
+    "profile": "demo",
+    "region": "us-east-1",
+    "scan_timestamp": "2025-11-20T00:00:00Z",
+    "heimdall_version": "0.1.0"
+  },
+  "graph": {
+    "directed": true,
+    "multigraph": false,
+    "nodes": [
+      {
+        "id": "arn:aws:iam::123456789012:user/intern",
+        "type": "user",
+        "name": "intern",
+        "path": "/"
+      },
+      {
+        "id": "arn:aws:iam::123456789012:user/contractor",
+        "type": "user",
+        "name": "contractor",
+        "path": "/"
+      },
+      {
+        "id": "arn:aws:iam::123456789012:role/DeveloperRole",
+        "type": "role",
+        "name": "DeveloperRole",
+        "path": "/"
+      },
+      {
+        "id": "arn:aws:iam::123456789012:role/DeployerRole",
+        "type": "role",
+        "name": "DeployerRole",
+        "path": "/"
+      },
+      {
+        "id": "arn:aws:iam::123456789012:role/ProductionAdminRole",
+        "type": "role",
+        "name": "ProductionAdminRole",
+        "path": "/"
+      },
+      {
+        "id": "PUBLIC",
+        "type": "public",
+        "name": "PUBLIC"
+      },
+      {
+        "id": "arn:aws:iam::123456789012:role/S3FullAccessRole",
+        "type": "role",
+        "name": "S3FullAccessRole",
+        "path": "/"
+      }
+    ],
+    "links": [
+      {
+        "source": "arn:aws:iam::123456789012:user/intern",
+        "target": "arn:aws:iam::123456789012:role/DeveloperRole",
+        "type": "assume_role",
+        "risk": "MEDIUM"
+      },
+      {
+        "source": "arn:aws:iam::123456789012:role/DeveloperRole",
+        "target": "arn:aws:iam::123456789012:role/DeployerRole",
+        "type": "assume_role",
+        "risk": "MEDIUM"
+      },
+      {
+        "source": "arn:aws:iam::123456789012:role/DeployerRole",
+        "target": "arn:aws:iam::123456789012:role/ProductionAdminRole",
+        "type": "assume_role",
+        "risk": "HIGH"
+      },
+      {
+        "source": "arn:aws:iam::123456789012:user/contractor",
+        "target": "arn:aws:iam::123456789012:role/ProductionAdminRole",
+        "type": "assume_role",
+        "risk": "CRITICAL"
+      },
+      {
+        "source": "PUBLIC",
+        "target": "arn:aws:iam::123456789012:role/S3FullAccessRole",
+        "type": "assume_role",
+        "condition": "public",
+        "risk": "CRITICAL"
+      }
+    ],
+    "stats": {
+      "node_count": 7,
+      "edge_count": 5,
+      "role_count": 4,
+      "user_count": 2
+    }
+  },
+  "risky_paths": [
+    {
+      "path": [
+        "PUBLIC",
+        "arn:aws:iam::123456789012:role/S3FullAccessRole"
+      ],
+      "source": "PUBLIC",
+      "target": "arn:aws:iam::123456789012:role/S3FullAccessRole",
+      "hops": 1,
+      "severity": "CRITICAL",
+      "reason": "Role can be assumed by anyone (public)",
+      "risk": "CRITICAL"
+    },
+    {
+      "path": [
+        "arn:aws:iam::123456789012:user/contractor",
+        "arn:aws:iam::123456789012:role/ProductionAdminRole"
+      ],
+      "source": "arn:aws:iam::123456789012:user/contractor",
+      "target": "arn:aws:iam::123456789012:role/ProductionAdminRole",
+      "hops": 1,
+      "severity": "CRITICAL",
+      "reason": "Low-privilege source (contractor); High-privilege target (productionadminrole); Direct assume-role access",
+      "risk": "CRITICAL"
+    },
+    {
+      "path": [
+        "arn:aws:iam::123456789012:user/intern",
+        "arn:aws:iam::123456789012:role/DeveloperRole",
+        "arn:aws:iam::123456789012:role/DeployerRole",
+        "arn:aws:iam::123456789012:role/ProductionAdminRole"
+      ],
+      "source": "arn:aws:iam::123456789012:user/intern",
+      "target": "arn:aws:iam::123456789012:role/ProductionAdminRole",
+      "hops": 3,
+      "severity": "CRITICAL",
+      "reason": "Low-privilege source (intern); High-privilege target (productionadminrole)",
+      "risk": "CRITICAL"
+    }
+  ]
+}

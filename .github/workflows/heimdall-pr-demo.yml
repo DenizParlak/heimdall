@@ -1,0 +1,122 @@
+name: Heimdall PR Simulator Demo
+
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+      - 'test_tfplan.json'
+      - 'examples/**'
+
+jobs:
+  pr-security-demo:
+    name: PR Security Simulation Demo
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Heimdall
+        run: |
+          pip install -e .
+          echo "✅ Heimdall installed"
+      
+      - name: Run PR Simulator Demo
+        id: heimdall
+        continue-on-error: true
+        run: |
+          # Use the test files we already have
+          echo "🚀 Running Heimdall PR Simulator..."
+          
+          set +e  # Don't exit on error, we want to capture exit code
+          python -m heimdall.cli pr-simulate \
+            --current-state test-scan-v1.8.0.json \
+            --terraform-plan test_tfplan.json \
+            --format github \
+            --output pr-comment.md \
+            --threshold HIGH \
+            --verbose
+          
+          EXIT_CODE=$?
+          set -e  # Re-enable exit on error
+          
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          
+          echo ""
+          if [ $EXIT_CODE -eq 1 ]; then
+            echo "❌ Analysis complete! BLOCKED - Critical paths detected (exit code: $EXIT_CODE)"
+          else
+            echo "✅ Analysis complete! PASSED (exit code: $EXIT_CODE)"
+          fi
+      
+      - name: Post PR Comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            let comment = '';
+            try {
+              comment = fs.readFileSync('pr-comment.md', 'utf8');
+            } catch (error) {
+              comment = '## 🛡️ Heimdall PR Security Analysis\n\n❌ Analysis failed. Check workflow logs.\n\nError: ' + error.message;
+            }
+            
+            // Find existing Heimdall comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.find(c => 
+              c.user.login === 'github-actions[bot]' && 
+              c.body.includes('Heimdall PR Security Analysis')
+            );
+            
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: comment
+              });
+              console.log('✅ Updated existing comment');
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+              console.log('✅ Created new comment');
+            }
+      
+      - name: Check security gate
+        if: steps.heimdall.outputs.exit_code == '1'
+        run: |
+          echo "❌ Security gate FAILED - Critical privilege escalation paths detected!"
+          echo "This PR introduces new CRITICAL or HIGH severity attack paths."
+          echo "Please review the findings and fix the issues before merging."
+          exit 1
+      
+      - name: Security gate passed
+        if: steps.heimdall.outputs.exit_code == '0'
+        run: |
+          echo "✅ Security gate PASSED - No new critical paths detected"
+          echo "This PR is safe to merge from an IAM security perspective."

@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "heimdall-aws"
+dynamic = ["version"]
+description = "AWS Attack Path Scanner - Discover privilege escalation paths across 10+ AWS services"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "Deniz Parlak", email = "denizparlak@protonmail.ch"}
+]
+keywords = ["aws", "iam", "security", "cloud", "pentesting", "attack-path"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+dependencies = [
+    "boto3>=1.28.0",
+    "click>=8.1.0",
+    "networkx>=3.0",
+    "rich>=13.0.0",
+    "textual>=0.47.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+
+web = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+]
+
+all = [
+    "heimdall-aws[dev,web]",
+]
+
+[project.scripts]
+heimdall = "heimdall.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/DenizParlak/heimdall"
+Repository = "https://github.com/DenizParlak/heimdall"
+Issues = "https://github.com/DenizParlak/heimdall/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["heimdall*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "heimdall.__version__"}
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.pytest.ini_options]
+markers = [
+    "regression: marks tests as regression tests (deselect with '-m \"not regression\"')",
+    "critical: marks tests as critical - must never fail",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

@@ -1,0 +1,94 @@
+# Heimdall AWS IAM Security Scan
+# This workflow runs Heimdall to detect privilege escalation paths
+# and uploads results to GitHub Security tab via SARIF
+
+name: Heimdall IAM Security Scan
+
+on:
+  # Run on schedule (weekly)
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6 AM UTC
+  
+  # Run on demand
+  workflow_dispatch:
+  
+  # Run on PRs that modify IAM-related files
+  pull_request:
+    paths:
+      - '**/*.tf'
+      - '**/iam*.json'
+      - '.github/workflows/heimdall*.yml'
+
+jobs:
+  heimdall-scan:
+    name: IAM Privilege Escalation Scan
+    runs-on: ubuntu-latest
+    
+    permissions:
+      security-events: write  # Required for SARIF upload
+      contents: read
+      id-token: write         # Required for OIDC auth (recommended)
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Heimdall
+        run: |
+          pip install -e .
+          heimdall --version
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Option 1: OIDC (recommended)
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+          
+          # Option 2: Access keys (less secure)
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
+      - name: Run Heimdall Scan
+        run: |
+          # Run privilege escalation detection with SARIF output
+          heimdall iam detect-privesc \
+            --format sarif \
+            --output heimdall-results.sarif \
+            --severity critical,high
+        continue-on-error: true  # Don't fail workflow on findings
+      
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: heimdall-results.sarif
+          category: heimdall-iam-security
+      
+      - name: Generate Summary
+        if: always()
+        run: |
+          echo "## 🛡️ Heimdall IAM Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f heimdall-results.sarif ]; then
+            CRITICAL=$(jq '[.runs[].results[] | select(.level == "error")] | length' heimdall-results.sarif)
+            HIGH=$(jq '[.runs[].results[] | select(.level == "warning")] | length' heimdall-results.sarif)
+            
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "See the **Security** tab for detailed findings." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No results file generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+
+# TIP: For a lighter PR check, create a separate workflow:
+# heimdall dashboard --quick

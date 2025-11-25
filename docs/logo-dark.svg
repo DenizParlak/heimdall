@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4ff"/>
+      <stop offset="100%" style="stop-color:#0099cc"/>
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4ff"/>
+      <stop offset="100%" style="stop-color:#0066aa"/>
+    </linearGradient>
+    <linearGradient id="awsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff9900"/>
+      <stop offset="100%" style="stop-color:#ffb84d"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="120" fill="#0d1117" rx="8"/>
+  
+  <!-- Shield icon -->
+  <g transform="translate(20, 15)">
+    <!-- Shield shape -->
+    <path d="M45 5 L80 20 L80 55 Q80 80 45 90 Q10 80 10 55 L10 20 Z" 
+          fill="#1a1a2e" stroke="url(#iconGrad)" stroke-width="2"/>
+    
+    <!-- Eye -->
+    <ellipse cx="45" cy="40" rx="22" ry="14" fill="none" stroke="#00d4ff" stroke-width="2" filter="url(#glow)"/>
+    <circle cx="45" cy="40" r="8" fill="#00d4ff" filter="url(#glow)"/>
+    <circle cx="45" cy="40" r="3" fill="#0d1117"/>
+    <circle cx="43" cy="38" r="2" fill="#ffffff" opacity="0.7"/>
+    
+    <!-- Runes: ᚺ (Heimdall) ᚱ (Path/Raido) -->
+    <text x="22" y="45" fill="#ffd700" font-size="10" opacity="0.8">ᚺ</text>
+    <text x="62" y="45" fill="#ffd700" font-size="10" opacity="0.8">ᚱ</text>
+    
+    <!-- Mini AWS cloud -->
+    <path d="M35 65 Q32 60 38 58 Q40 52 48 54 Q55 50 58 58 Q64 56 62 65 Z" 
+          fill="url(#awsGrad)" opacity="0.8"/>
+  </g>
+  
+  <!-- Text: HEIMDALL -->
+  <text x="115" y="55" fill="url(#textGrad)" font-size="36" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" letter-spacing="2">
+    HEIMDALL
+  </text>
+  
+  <!-- Tagline -->
+  <text x="115" y="80" fill="#8b949e" font-size="14" font-family="system-ui, -apple-system, sans-serif">
+    AWS Attack Path Scanner
+  </text>
+  
+  <!-- AWS badge -->
+  <rect x="115" y="90" width="40" height="18" fill="#ff9900" rx="9"/>
+  <text x="135" y="103" fill="#232f3e" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle" font-weight="bold">AWS</text>
+  
+  <!-- Version badge -->
+  <rect x="160" y="90" width="55" height="18" fill="#238636" rx="9"/>
+  <text x="187" y="103" fill="#ffffff" font-size="10" font-family="system-ui, sans-serif" text-anchor="middle">v1.13.0</text>
+  
+  <!-- Bifrost colors hint -->
+  <rect x="360" y="35" width="4" height="50" fill="#ff6b6b" opacity="0.6" rx="2"/>
+  <rect x="368" y="35" width="4" height="50" fill="#ffd93d" opacity="0.6" rx="2"/>
+  <rect x="376" y="35" width="4" height="50" fill="#6bcb77" opacity="0.6" rx="2"/>
+</svg>

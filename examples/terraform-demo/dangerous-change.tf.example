@@ -1,0 +1,88 @@
+# ⚠️ DANGEROUS CHANGE EXAMPLE
+# This file shows what NOT to do - it creates privilege escalation paths
+# 
+# To test PR Simulator:
+# 1. Rename this file: mv dangerous-change.tf.example main.tf
+# 2. Create PR
+# 3. Watch Heimdall block it! 🛡️
+
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+
+# ⚠️ DANGEROUS: User with privilege escalation
+resource "aws_iam_user" "developer" {
+  name = "alice-developer"
+  path = "/developers/"
+
+  tags = {
+    Environment = "development"
+    ManagedBy   = "terraform"
+    Team        = "engineering"
+  }
+}
+
+# 🚨 CRITICAL VULNERABILITY: PassRole + Lambda
+resource "aws_iam_user_policy" "dev_dangerous" {
+  name = "developer-dangerous"
+  user = aws_iam_user.developer.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",           # 🚨 Can pass any role!
+          "lambda:CreateFunction",  # 🚨 Can create Lambda!
+          "lambda:InvokeFunction"   # 🚨 Can execute code!
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Admin role that can be abused
+resource "aws_iam_role" "admin_role" {
+  name = "AdminRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"  # 🚨 Lambda can assume this!
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# 🚨 Full admin access
+resource "aws_iam_role_policy_attachment" "admin_access" {
+  role       = aws_iam_role.admin_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+# Attack Path:
+# 1. alice-developer has iam:PassRole + lambda:CreateFunction
+# 2. Creates Lambda function with AdminRole attached
+# 3. Lambda executes with full admin permissions
+# 4. alice-developer now has admin access via Lambda!
+#
+# Heimdall will detect this as:
+# [CRITICAL] alice-developer - passrole_lambda
+# Impact: Create Lambda function with privileged role, execute code with elevated permissions
