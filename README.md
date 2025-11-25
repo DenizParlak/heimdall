@@ -231,8 +231,8 @@ Analyze privilege escalation across **10 AWS services**:
 | 🪣 S3 | Public buckets, cross-account, sensitive data |
 | ⚡ Lambda | Execution roles, env vars, code injection |
 | 🔐 KMS | Key policies, grants, cross-account |
-|  Secrets | Resource policies, rotation status |
-| � STS | Trust policies, cross-account assumptions |
+| 🔑 Secrets | Resource policies, rotation status |
+| 🔀 STS | Trust policies, cross-account assumptions |
 | 📢 SNS | Topic policies, public access |
 | 📬 SQS | Queue policies, encryption |
 | 🗄️ DynamoDB | Encryption, sensitive tables |
