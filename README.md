@@ -47,6 +47,7 @@ In AWS, Heimdall watches your environment and reveals all paths to compromise.
 |---------|-------------|
 | 🔗 **Attack Chain Analysis** | Multi-step privilege escalation paths with MITRE ATT&CK mapping |
 | 🌐 **Cross-Service Scanner** | Analyze 10 AWS services (EC2, RDS, S3, Lambda, KMS, Secrets Manager, STS, SNS, SQS, DynamoDB) |
+| 🏗️ **Terraform Engine** ⭐ | Detect IAM attack paths in Terraform plans before deployment |
 | 🎨 **Interactive TUI** | Cosy Nordic-themed terminal interface |
 | 📊 **One-Command Dashboard** | `heimdall dashboard` - instant security overview |
 | 🎯 **50+ Privesc Patterns** | Comprehensive IAM privilege escalation coverage |
@@ -161,7 +162,7 @@ CRITICAL:
     Target: put_user_policy (CRITICAL)
 
 What's detected:
-  ✓ Junior devs who can assume roles leading to admin
+  ✓ Devs who can assume roles leading to admin
   ✓ Contractors with indirect paths through role chains
   ✓ Hidden escalation paths not obvious from direct permissions
 ```
@@ -237,6 +238,48 @@ Analyze privilege escalation across **10 AWS services**:
 | 📬 SQS | Queue policies, encryption |
 | 🗄️ DynamoDB | Encryption, sensitive tables |
 
+### 🏗️ Terraform Attack Path Engine ⭐ NEW
+
+**Shift-left security** - Detect IAM privilege escalation in Terraform plans **before deployment**.
+
+```bash
+# Generate plan JSON
+terraform plan -out=plan.tfplan
+terraform show -json plan.tfplan > plan.json
+
+# Scan for attack paths
+heimdall terraform scan plan.json
+heimdall terraform scan plan.json --fail-on critical  # CI/CD gate
+```
+
+**What makes it different from tfsec/checkov/trivy?**
+
+| Tool | Approach | Focus |
+|------|----------|-------|
+| tfsec, checkov, trivy | Static config checks | "Is this bucket encrypted?" |
+| **Heimdall Terraform** | Attack path analysis | "Does this IAM change create an escalation path to admin?" |
+
+**Key capabilities:**
+- **45+ IAM attack patterns** - PassRole chains, trust policy hijacks, credential creation
+- **Before/After comparison** - Shows security posture change, not just violations
+- **Multi-hop chain detection** - Developer → Lambda Role → Admin
+- **Cross-service triggers** - S3 → Lambda, SNS → Lambda, API Gateway → Lambda
+- **Risk delta scoring** - Quantifies security impact of changes
+
+**Example output:**
+```
+╔═══════════════════════════╤══════════════╤══════════════╤═════════════════╗
+║ Metric                    │    Before    │    After     │     Change      ║
+╟───────────────────────────┼──────────────┼──────────────┼─────────────────╢
+║ ⚔️ Attack Paths            │      2       │      7       │       +5        ║
+║ 🎯 Risk Score             │      10      │      60      │       +50       ║
+╚═══════════════════════════╧══════════════╧══════════════╧═════════════════╝
+
+⛔ BLOCKING ISSUES:
+  • CHAIN: 'dev-role' → PassRole → admin role 'prod-admin'
+  • CRITICAL: Role 'deploy-role' can create credentials (iam:CreateAccessKey)
+```
+
 ### 🎨 Interactive TUI
 - **Nordic-themed** beautiful terminal interface
 - **Real-time** finding exploration
@@ -305,6 +348,18 @@ heimdall iam cross-service --compact  # Summary only
 ```bash
 heimdall iam tui                      # Interactive terminal UI
 heimdall iam tui --graph scan.json    # Load existing scan
+```
+
+### Terraform Security
+```bash
+# Scan Terraform plan for attack paths
+heimdall terraform scan plan.json                    # Full analysis
+heimdall terraform scan plan.json --quick            # Skip AWS state fetch
+heimdall terraform scan plan.json --json             # JSON output
+heimdall terraform scan plan.json --fail-on critical # CI/CD gate
+
+# Detailed report
+heimdall terraform report plan.json --format markdown
 ```
 
 ### Export & CI/CD
@@ -379,10 +434,10 @@ For cross-service scanning, add:
 - [x] One-command dashboard
 - [x] SARIF/CSV export
 - [x] Baseline/ignore system
+- [x] **Terraform Attack Path Engine** ⭐ NEW
 
 ### 🔜 Coming Soon
 - [ ] Slack/Teams alerts
-- [ ] Terraform native integration
 - [ ] Multi-account organization scanning
 - [ ] Compliance framework mapping (CIS, PCI-DSS)
 - [ ] Auto-remediation suggestions

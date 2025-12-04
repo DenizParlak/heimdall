@@ -2483,6 +2483,11 @@ from heimdall.commands.dashboard import dashboard
 main.add_command(dashboard)
 
 
+# Terraform Attack Path Engine
+from heimdall.commands.terraform import terraform
+main.add_command(terraform)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Optional Command Registration
 # ═══════════════════════════════════════════════════════════════════════════════
