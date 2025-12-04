@@ -238,7 +238,7 @@ Analyze privilege escalation across **10 AWS services**:
 | 📬 SQS | Queue policies, encryption |
 | 🗄️ DynamoDB | Encryption, sensitive tables |
 
-### 🏗️ Terraform Attack Path Engine ⭐ NEW
+### 🏗️ Terraform Attack Path Engine
 
 **Shift-left security** - Detect IAM privilege escalation in Terraform plans **before deployment**.
 
@@ -257,7 +257,7 @@ heimdall terraform scan plan.json --fail-on critical  # CI/CD gate
 | Tool | Approach | Focus |
 |------|----------|-------|
 | tfsec, checkov, trivy | Static config checks | "Is this bucket encrypted?" |
-| **Heimdall Terraform** | Attack path analysis | "Does this IAM change create an escalation path to admin?" |
+| **Heimdall** | Attack path analysis | "Does this IAM change create an escalation path to admin?" |
 
 **Key capabilities:**
 - **45+ IAM attack patterns** - PassRole chains, trust policy hijacks, credential creation
@@ -279,6 +279,8 @@ heimdall terraform scan plan.json --fail-on critical  # CI/CD gate
   • CHAIN: 'dev-role' → PassRole → admin role 'prod-admin'
   • CRITICAL: Role 'deploy-role' can create credentials (iam:CreateAccessKey)
 ```
+
+![Terraform Sample Scan](docs/screenshots/tfs.png)
 
 ### 🎨 Interactive TUI
 - **Nordic-themed** beautiful terminal interface
